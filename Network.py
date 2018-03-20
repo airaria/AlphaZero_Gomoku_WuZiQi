@@ -145,7 +145,7 @@ class Controller():
             pi = pi.cuda()
 
         policy,value = self.model(x)
-        print (value.shape,z.shape,policy.shape,pi.shape)
+        #print (value.shape,z.shape,policy.shape,pi.shape)
         loss = self.loss(value,z,policy,pi)
         loss.backward()
         self.optimizer.step()

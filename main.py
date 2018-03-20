@@ -135,7 +135,7 @@ def train_epoch(controller, buffer, queue, lock, barrier, done_event, save_dir):
                 loss += controller.train_on_batch(sample_states, sample_wins, sample_probs)
 
             print("Average loss: ",loss/NoB)
-            print ("A training iteration is finished, start next self-play")
+            print ("{}-th iteration is finished, start next self-play".format(count+1))
 
         count += 1
         if count%10==0:
@@ -174,7 +174,7 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
         states_a,probs_a,wins_a = self_play(game,AIplayer)
         queue.put([states_a,probs_a,wins_a])
 
-        print ("{}-th play generated, waiting for passing barrier".format(i))
+        print ("{}-th play generated, waiting for passing barrier".format(i+1))
         barrier.wait()
         time.sleep(0.5)
         barrier.wait()
