@@ -63,7 +63,7 @@ def human_play(game,AIplayer,BW):
             board,reward,is_done = game.step(move_to_take)
         elif game.cur_player == -BW:
             AIplayer.observe(game,last_human_action)
-            probs=AIplayer.think() #TODO
+            probs=AIplayer.think()
             move_to_take = AIplayer.take_action()
             print(move_to_take,probs.max())
             board, reward, is_done = game.step(move_to_take)

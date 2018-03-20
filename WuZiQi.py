@@ -1,6 +1,7 @@
 import numpy as np
 from ctypes import *
 import numpy.ctypeslib as npct
+from config import BOARD_SIZE
 
 BLACK = 1
 WHITE = 1
@@ -12,10 +13,11 @@ check.argtypes = [npct.ndpointer(dtype=np.int32,ndim=2),c_int,c_int,c_int]
 
 
 class Env(object):
-    POS_COORD = []
+    POS_COORD = np.array([(i,j) for i in range(BOARD_SIZE[0]) for j in range(BOARD_SIZE[1])])
 
     def __init__(self,size):
         self.size = size
+        assert self.size == BOARD_SIZE
         self.width = size[1]
         self.height = size[0]
         self.board = np.zeros(size,dtype=np.int32)
@@ -25,7 +27,6 @@ class Env(object):
         self.cur_player = BLACK
         self.last_action = None
 
-        Env.POS_COORD = np.array([(i,j) for i in range(self.height) for j in range(self.width)])
 
     def reset(self):
         self.board = np.zeros(self.size,dtype=np.int32)

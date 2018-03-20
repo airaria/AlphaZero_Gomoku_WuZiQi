@@ -27,12 +27,22 @@ class TreeNode(object):
 
     def expand(self,action_priors):  # ((action,p),(action,p)...)
         if self.is_expanded:
-            self.revert_visits()
+            return #self.revert_visits()
         else:
             self.is_expanded = True
             for action,p in action_priors:
                 if action not in self.children:
                     self.children[action] = TreeNode(self,p)
+
+    def expand_and_backup(self,action_priors,value):
+        if self.is_expanded:
+            return #self.revert_visits()
+        else:
+            self.is_expanded = True
+            for action,p in action_priors:
+                if action not in self.children:
+                    self.children[action] = TreeNode(self,p)
+            self.backup(value)
 
     def backup(self,v):
         self.N += 1
@@ -40,10 +50,12 @@ class TreeNode(object):
         if self.parent:
             self.parent.backup(-v)
 
+    '''
     def revert_visits(self):
         self.N -= 1
         if self.parent:
             self.parent.revert_visits()
+    '''
 
     def add_virtual_loss(self):
         self.N += N_VIRTUAL_LOSS
@@ -92,10 +104,11 @@ class MCTS(object):
             action_probs, leaf_values = self.value_fn(games,many=True)
             for node,action_prob,leaf_value in zip(nodes,action_probs,leaf_values):
                 assert not node.is_done
-                node.expand(action_priors=action_prob)
-                node.backup(-leaf_value)
                 node.revert_virtual_loss()
-
+                node.expand_and_backup(action_priors=action_prob,value=-leaf_value)
+                #node.expand(action_priors=action_prob)
+                #if not node.is_expanded:
+                #    node.backup(-leaf_value)
 
     def search(self,origin_game):
         game = copy.deepcopy(origin_game)

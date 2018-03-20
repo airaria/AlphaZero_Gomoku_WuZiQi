@@ -58,7 +58,7 @@ class Buffer(object):
 
         self.num_sample = min(self.buffer_size, self.num_sample)
     def sample(self,batch_size):
-        index = np.random.choice(self.num_sample,batch_size)
+        index = np.random.choice(self.num_sample,batch_size,replace=False)
         sample_states = self.state_buffer[index]
         sample_probs  = self.prob_buffer[index]
         sample_wins   = self.win_buffer[index]

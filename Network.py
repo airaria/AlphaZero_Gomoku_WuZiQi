@@ -179,8 +179,11 @@ class Controller():
             return [((game.cur_player,lp[i][0],lp[i][1]),probs[i]) for i in range(len(lp))],\
                    value[0][0]
 
+    def save2file(self,fn):
+        torch.save(self.model.state_dict(), fn)
 
-
+    def load_file(self,fn):
+        self.model.load_state_dict(torch.load(fn))
 
 
 if __name__ == '__main__':
