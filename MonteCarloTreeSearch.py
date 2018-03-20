@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from config import *
 
 def softmax(x):
     probs = np.exp(x-np.max(x,axis=-1,keepdims=True))
@@ -11,30 +12,50 @@ class TreeNode(object):
         self.prior_p = prior_p
         self.N = 0
         self.W = 0
-        self.Q = 0
-        self.U = 0
         self.is_done = False
         self.children = {}  # {action: child, action: child ....}
+        self.is_expanded = False
 
     def QU(self,c_puct):
-        self.U = c_puct*self.prior_p*np.sqrt(self.parent.N)/(1+self.N)
-        return self.Q + self.U
+        U = c_puct*self.prior_p*np.sqrt(self.parent.N)/(1+self.N)
+        if self.N == 0: # Q = 0
+            return U
+        return self.W/self.N + U
 
     def select(self,c_puct):
         return max(self.children.items(), key=lambda act_child: act_child[1].QU(c_puct))
 
     def expand(self,action_priors):  # ((action,p),(action,p)...)
-        for action,p in action_priors:
-            if action not in self.children:
-                self.children[action] = TreeNode(self,p)
+        if self.is_expanded:
+            self.revert_visits()
+        else:
+            self.is_expanded = True
+            for action,p in action_priors:
+                if action not in self.children:
+                    self.children[action] = TreeNode(self,p)
 
     def backup(self,v):
         self.N += 1
         self.W += v
-        self.Q = self.W/self.N
         if self.parent:
             self.parent.backup(-v)
 
+    def revert_visits(self):
+        self.N -= 1
+        if self.parent:
+            self.parent.revert_visits()
+
+    def add_virtual_loss(self):
+        self.N += N_VIRTUAL_LOSS
+        self.W -= N_VIRTUAL_LOSS
+        if self.parent:
+            self.parent.add_virtual_loss()
+
+    def revert_virtual_loss(self):
+        self.N -= N_VIRTUAL_LOSS
+        self.W += N_VIRTUAL_LOSS
+        if self.parent:
+            self.parent.revert_virtual_loss()
 
 class MCTS(object):
     def __init__(self, value_fn, c_puct=5, n_search=10000):
@@ -43,24 +64,55 @@ class MCTS(object):
         self.c_puct = c_puct
         self.n_search = n_search
 
+    def search_many(self,origin_game,many=N_EVALUATE):
+        assert self.root.is_done == False
+        nodes = []
+        games = []
+        for _ in range(many):
+            action = None
+            game = copy.deepcopy(origin_game)
 
-    def search(self,game):
+            node = self.root
+            while len(node.children)>0:
+                action,node = node.select(self.c_puct)
+                game.fast_step(action)
+
+            if not action is None:
+                node.is_done, reward = game.check(action)
+            if node.is_done:
+                leaf_value = -1  # reward
+                node.backup(-leaf_value)
+            else:
+                node.add_virtual_loss()
+                games.append(game)
+                nodes.append(node)
+
+        if len(games)>0:
+            # 若node是黑棋落完子后的局面，那么leaf_value是以白棋的视角衡量的胜率
+            action_probs, leaf_values = self.value_fn(games,many=True)
+            for node,action_prob,leaf_value in zip(nodes,action_probs,leaf_values):
+                assert not node.is_done
+                node.expand(action_priors=action_prob)
+                node.backup(-leaf_value)
+                node.revert_virtual_loss()
+
+
+    def search(self,origin_game):
+        game = copy.deepcopy(origin_game)
         assert self.root.is_done == False
         node = self.root
         action = None
         while len(node.children)>0:
             action,node = node.select(self.c_puct)
             game.fast_step(action)
-
         # 若当node是黑棋落完子后的局面，那么leaf_value是以白棋的视角衡量的胜率
         action_probs, leaf_value = self.value_fn(game)
 
         if not action is None:
-            done,reward = game.check(action)
-            node.is_done = done
-            if done:
-                leaf_value = reward
-        if not node.is_done:
+            node.is_done,reward = game.check(action)
+        if node.is_done:
+                leaf_value = -1 #reward
+        else:
             node.expand(action_priors=action_probs)
 
         # Update value and visit count of nodes in this traversal.
@@ -73,7 +125,7 @@ class MCTS(object):
         #else:
         #    self.root = TreeNode(None, 1.0)
 
-    def get_move_probs(self, game, temperature=1e-3):
+    def get_move_probs(self, game, temperature):
         """Runs all playouts sequentially and returns the available actions and their corresponding probabilities
         Arguments:
         state -- the current state, including both game state and the current player.
@@ -82,8 +134,7 @@ class MCTS(object):
         the available actions and the corresponding probabilities
         """
         for n in range(self.n_search):
-            env_copy = copy.deepcopy(game)
-            self.search(env_copy)
+            self.search_many(game)
 
         act_n = [(act, node.N) for act, node in self.root.children.items()]
         acts, visits = zip(*act_n)
@@ -93,10 +144,15 @@ class MCTS(object):
 
 
 class MCTSPlayer(object):
-    def __init__(self,value_fn,c_puct,n_search,is_selfplay,temperature):
-        self.mcts = MCTS(value_fn,c_puct,n_search)
-        self.is_selfplay = is_selfplay
+    def __init__(self,controller,c_puct,n_search,return_probs,temperature,noise=True):
+        self.controller = controller
+        self.mcts = MCTS(controller.value_fn,c_puct,n_search)
+        self.return_probs = return_probs
         self.temperature = temperature
+        self.noise = noise
+        self.game = None
+        self.acts = None
+        self.probs = None
 
         self.move_count = 0
         self.dir_start = 20
@@ -105,30 +161,34 @@ class MCTSPlayer(object):
         self.move_count = 0
         self.mcts.root = TreeNode (None, 1.0)
 
-    def get_action(self,game,opposite_move=None):
-        if opposite_move is not None: # opponent is Human
-            self.mcts.update_with_move(opposite_move)
-
-        assert game.n_legal_moves > 0
-        acts, probs = self.mcts.get_move_probs(game,temperature=self.temperature)
-
-        self.move_count += 1
-
-        if self.is_selfplay:
-            if self.move_count > self.dir_start:
-                dirichlet_noise = np.random.dirichlet(0.1 * np.ones(len(probs)))
-                move_to_take_i = np.random.choice(len(probs),p=(1-0.25)*probs + 0.25*dirichlet_noise)
+    def observe(self,game,opposite_move=None):
+        self.game = game
+        if not opposite_move is None:
+            if opposite_move not in self.mcts.root.children:
+                print ("Not in AI's mc tree...",opposite_move)
             else:
-                move_to_take_i = np.random.choice(len(probs),p=probs)
-        else:
-            move_to_take_i = np.argmax(probs)
+                self.mcts.update_with_move(opposite_move)
 
-        move_to_take = acts[move_to_take_i]
+    def think(self):
+        assert self.game.n_legal_moves > 0
+        self.acts, self.probs = self.mcts.get_move_probs(self.game, temperature=self.temperature)
+        if self.return_probs:
+            arr_probs = np.zeros(self.game.height * self.game.width)
+            arr_probs[[a[1] * self.game.width + a[2] for a in self.acts]] = self.probs
+            return arr_probs
+
+    def take_action(self):
+        self.move_count += 1
+        if self.noise:
+            if self.move_count > self.dir_start:
+                dirichlet_noise = np.random.dirichlet(0.1 * np.ones(len(self.probs)))
+                move_to_take_i = np.random.choice(len(self.probs),p=(1-0.25)*self.probs + 0.25*dirichlet_noise)
+            else:
+                move_to_take_i = np.random.choice(len(self.probs),p=self.probs)
+        else:
+            move_to_take_i = np.argmax(self.probs)
+
+        move_to_take = self.acts[move_to_take_i]
         self.mcts.update_with_move(move_to_take)
 
-        if self.is_selfplay:
-            arr_probs = np.zeros(game.height*game.width)
-            arr_probs[[a[1] * game.width + a[2] for a in acts]]= probs
-            return move_to_take,arr_probs
-        else:
-            return move_to_take
+        return move_to_take

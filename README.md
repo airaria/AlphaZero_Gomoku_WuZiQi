@@ -1,1 +1,1 @@
-# renju-rl
+# AlphaZero_Gomoku_WuZiQi

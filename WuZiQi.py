@@ -28,7 +28,7 @@ class Env(object):
         Env.POS_COORD = np.array([(i,j) for i in range(self.height) for j in range(self.width)])
 
     def reset(self):
-        self.board = np.zeros(self.size)
+        self.board = np.zeros(self.size,dtype=np.int32)
         self.legal_positions = np.ones(self.size,dtype=np.bool)
         self.n_legal_moves = self.width * self.height
 
@@ -58,7 +58,9 @@ class Env(object):
 
     def check(self,action):
         color, row, col = action
-        done = bool(check(self.board,col+row*self.width,self.width,self.height))
+        #print (self.board, col + row * self.width, self.width, self.height)
+        res = check(self.board, col + row * self.width, self.width, self.height)
+        done = bool(res)
         if done:
             reward = color
         else:
@@ -67,18 +69,31 @@ class Env(object):
             done = True
         return done,reward
 
+    def build_features(self,rot_and_flip=False): #cur_player = BLACK(1)/WHITE(-1)
+        features = np.zeros((4, self.width, self.height), dtype=np.float32)
+        features[0] = self.board == self.cur_player
+        features[1] = self.board == -self.cur_player
+        if not self.last_action is None:
+            lst_player, row, col = self.last_action
+            assert lst_player == -self.cur_player
+            features[2][row,col] = 1
+        features[3,:] = (self.cur_player + 1) / 2
 
-def make(size):
-    return Env(size)
+        if rot_and_flip:  #random rotation | flipping
+            features = np.rot90(features,np.random.randint(4),axes=(1,2))
+            if np.random.random()>0.5:
+                features = np.flip(features,axis=-1)
+        return features.copy()
 
-def build_features(game): #cur_player = BLACK(1)/WHITE(-1)
-
-    features = np.zeros((4, game.width, game.height), dtype=np.float32)
-    features[0] = game.board == game.cur_player
-    features[1] = game.board == -game.cur_player
-    if not game.last_action is None:
-        lst_player, row, col = game.last_action
-        assert lst_player == -game.cur_player
-        features[2][row,col] = 1
-    features[3,:] = (game.cur_player + 1) / 2
-    return features
+    def __repr__(self):
+        black = '●'
+        white = '○'
+        sym_dict = {1:black,0:' ',-1:white}
+        sym_board = []
+        for i,row in enumerate(self.board):
+            sym_board.append(" {} ┃ ".format(i) + ' | '.join([sym_dict[j] for j in row])+' |')
+        sym_board = '\n'.join(sym_board)
+        return \
+        (" {} ┃ ".format(sym_dict[self.cur_player]) + ' | '.join([str(i) for i in range(7)])+' |'+'\n')\
+        +'\n'\
+        +sym_board

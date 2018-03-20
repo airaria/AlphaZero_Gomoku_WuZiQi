@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
-from WuZiQi import build_features
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -152,25 +151,43 @@ class Controller():
         self.optimizer.step()
         return loss.data.cpu()[0]#loss.data.cpu() is torch.FloatTensor of shape(1,)
 
-    def value_fn(self,game):
-        features = build_features(game).reshape(-1,4,game.height,game.width)
-        policy, value = self.predict(features)
+    def value_fn(self,games,many=False):
+        if many:
+            features_list = []
+            ap_list = []
+            value_list = []
+            for game in games:
+                features_list.append(game.build_features(rot_and_flip=True).reshape(4, game.height, game.width))
+            features = np.array(features_list)
+            policy, value = self.predict(features)
+            for k in range(len(games)):
+                probs = policy[k][games[k].legal_positions.reshape(-1)]
+                lp = games[k].POS_COORD[games[k].legal_positions.reshape(-1)]
+                cur_player = games[k].cur_player
+                ap_list.append([((cur_player, lp[i][0], lp[i][1]), probs[i]) for i in range(len(lp))])
+                value_list.append(value[k][0])
+            return ap_list, value_list
 
-        probs = policy[0][game.legal_positions.reshape(-1)]
-        lp = game.POS_COORD[game.legal_positions.reshape(-1)]
+        else:
+            game = games
+            features = game.build_features(rot_and_flip=True).reshape(-1,4,game.height,game.width)
+            policy, value = self.predict(features)
 
-        return [((game.cur_player,lp[i][0],lp[i][1]),probs[i]) for i in range(len(lp))],\
-               value[0][0]
+            probs = policy[0][game.legal_positions.reshape(-1)]
+            lp = game.POS_COORD[game.legal_positions.reshape(-1)]
+
+            return [((game.cur_player,lp[i][0],lp[i][1]),probs[i]) for i in range(len(lp))],\
+                   value[0][0]
+
+
 
 
 
 if __name__ == '__main__':
     x = Variable(torch.from_numpy(np.random.random((32,4,7,7)).astype(dtype=np.float32)))
     model = PoliycValueNet(7,7,4)
-    r = model(x)
-
     controller = Controller(model,0.001)
-
+    r = model(x)
 
     controller.predict(x.data.numpy())
 
