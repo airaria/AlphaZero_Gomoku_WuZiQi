@@ -19,7 +19,7 @@ def self_play(game,AIplayer):
         if is_done:
             break
 
-        print(game)
+        #print(game)
 
         AIplayer.observe(game)
         probs = AIplayer.think()
@@ -35,7 +35,7 @@ def self_play(game,AIplayer):
 
         _, reward, is_done = game.step(move_to_take)
         print ('is_done',is_done)
-    print(game)
+    #print(game)
     win_list = [cp*reward for cp in current_player_list]
     #augmentation
     states_a, probs_a, wins_a = data_augment(states_list,probs_list,win_list)
@@ -166,7 +166,7 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
                 state_dict = training_model.state_dict()
                 AIplayer.controller.model.load_state_dict(state_dict)
             '''
-            # Sequential training , don't need lock
+            # Sequential self-play and training , don't need lock
             state_dict = training_model.state_dict()
             AIplayer.controller.model.load_state_dict(state_dict)
 
