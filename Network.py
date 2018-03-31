@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 import numpy as np
+import os,glob
 
 def conv3x3(in_planes, out_planes, stride=1):
     return nn.Conv2d(in_planes, out_planes, kernel_size=3, stride=stride,
@@ -179,7 +180,11 @@ class Controller():
             return [((game.cur_player,lp[i][0],lp[i][1]),probs[i]) for i in range(len(lp))],\
                    value[0][0]
 
-    def save2file(self,fn):
+    def save2file(self,fn,max_to_keep):
+        dir = os.path.dirname(fn)
+        model_files = sorted(glob.glob(os.path.join(dir,"*.pkl")))
+        if len(model_files) > max_to_keep:
+            os.remove(model_files[0])
         torch.save(self.model.state_dict(), fn)
 
     def load_file(self,fn):

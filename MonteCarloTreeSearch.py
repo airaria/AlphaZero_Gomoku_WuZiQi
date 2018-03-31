@@ -139,13 +139,7 @@ class MCTS(object):
         #    self.root = TreeNode(None, 1.0)
 
     def get_move_probs(self, game, temperature):
-        """Runs all playouts sequentially and returns the available actions and their corresponding probabilities
-        Arguments:
-        state -- the current state, including both game state and the current player.
-        temp -- temperature parameter in (0, 1] that controls the level of exploration
-        Returns:
-        the available actions and the corresponding probabilities
-        """
+
         for n in range(self.n_search):
             self.search_many(game)
 

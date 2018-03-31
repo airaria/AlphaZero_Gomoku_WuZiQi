@@ -118,7 +118,7 @@ if __name__=='__main__':
 
     AIplayer = MonteCarloTreeSearch.MCTSPlayer(
         playing_controller,C_PUCT,N_SEARCH,
-        return_probs=True,temperature=TEMPARETURE,noise=False)
+        return_probs=True,temperature=TEMPERATURE,noise=False)
 
     for i in range(2):
 

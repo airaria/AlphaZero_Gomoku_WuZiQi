@@ -15,6 +15,7 @@ def self_play(game,AIplayer):
     states_list, probs_list, current_player_list = [], [], []
     is_done = False
     reward = 0
+    #print ("Starting self-play")
     while True:
         if is_done:
             break
@@ -24,17 +25,18 @@ def self_play(game,AIplayer):
         AIplayer.observe(game)
         probs = AIplayer.think()
 
-        print(probs.max(), probs.argmax() // 7, probs.argmax() % 7)
+        #print(probs.max(), probs.argmax() // BOARD_SIZE[0], probs.argmax() % BOARD_SIZE[1])
 
         move_to_take = AIplayer.take_action()
-        print (move_to_take)
+        #print (move_to_take)
 
         states_list.append(game.build_features(rot_and_flip=0))
         probs_list.append(probs)
         current_player_list.append(game.cur_player)
 
         _, reward, is_done = game.step(move_to_take)
-        print ('is_done',is_done)
+        #print ('is_done',is_done)
+    #print ("done")
     #print(game)
     win_list = [cp*reward for cp in current_player_list]
     #augmentation
@@ -103,27 +105,33 @@ def train_epoch(controller, buffer, queue, lock, barrier, done_event, save_dir):
 
     if not os.path.exists(SAVE_DIR):
         os.mkdir(SAVE_DIR)
+    count = 0
 
     while not done_event.is_set():
-        count = 0
         print ("training process is waiting...")
         barrier.wait()
         print ("training process has crossed the barrier.")
         time.sleep(1)
+
+        n_new_sample = 0
         while True:
             try:
                 states_a, probs_a, wins_a = queue.get_nowait()
                 buffer.append_many(states_a, probs_a, wins_a)
+                n_new_sample += len(states_a)
                 print("samples length ", len(states_a))
             except EmptyError:
                 break
 
         if (len(buffer) < START_TRAIN_BUFFER_SIZE):
             print ("Buffer size {} is still too small, waiting for more ".format(len(buffer)))
+        elif n_new_sample==0:
+            print ("No new data.")
         else:
-            #TODO train loop
+            #train loop
             loss = 0
             NoB = N_EPOCH_PER_TRAIN_STEP*buffer.num_sample//BATCH_SIZE
+            print ("Number of sample: ",buffer.num_sample)
             print ("Number of batches: ",NoB)
             for i_batch in range(NoB):
                 sample_states, sample_probs, sample_wins = buffer.sample(BATCH_SIZE)
@@ -136,15 +144,17 @@ def train_epoch(controller, buffer, queue, lock, barrier, done_event, save_dir):
 
             print("Average loss: ",loss/NoB)
             print ("{}-th iteration is finished, start next self-play".format(count+1))
+            count += 1
 
-        count += 1
-        if count%10==0:
-            training_controller.save2file(os.path.join(save_dir,"model_{:05d}.pkl".format(count)))
+        if count%SAVE_EVERY_N_EPOCH==0:
+            training_controller.save2file(
+                os.path.join(save_dir,"model_{:05d}.pkl".format(count)),MAX_TO_KEEP)
 
         barrier.wait()
         time.sleep(1)
 
-    print ("Detect done_event. Training is ended.")
+    print ("Detect done_event. Training is finished.")
+
 
 def collect_self_play_data(game,queue,lock,barrier,done_event,
                            num_self_play=MAX_SELF_PLAY,
@@ -156,9 +166,10 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
 
     AIplayer = MonteCarloTreeSearch.MCTSPlayer(
         playing_controller,C_PUCT,N_SEARCH,
-        return_probs=True,temperature=TEMPARETURE,noise=True)
+        return_probs=True,temperature=TEMPERATURE,noise=True)
 
     for i in range(num_self_play):
+        print ("Start %d-th self-play" % i+1)
         #load neweset net state
         if not training_model is None:
             '''
@@ -174,10 +185,18 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
         states_a,probs_a,wins_a = self_play(game,AIplayer)
         queue.put([states_a,probs_a,wins_a])
 
-        print ("{}-th play generated, waiting for passing barrier".format(i+1))
-        barrier.wait()
-        time.sleep(0.5)
-        barrier.wait()
+        print ("{}-th play generated")
+
+        if (i+1) % SELY_PLAY_PER_TRAIN == 0:
+            print ("waiting for passing barrier".format(i+1))
+            barrier.wait()
+            time.sleep(0.5)
+            barrier.wait()
+
+    print("waiting for passing barrier".format(i + 1))
+    barrier.wait()
+    time.sleep(0.5)
+    barrier.wait()
 
     print ("Set up done_event.")
     done_event.set()
@@ -220,5 +239,5 @@ if __name__=='__main__':
         #test_controller.load_file(LOAD_FN)
         AIplayer = MonteCarloTreeSearch.MCTSPlayer(
             test_controller, C_PUCT, N_SEARCH,
-            return_probs=True, temperature=TEMPARETURE, noise=False)
+            return_probs=True, temperature=TEMPERATURE, noise=False)
         human_play(game, AIplayer, BLACK)
