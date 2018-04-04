@@ -1,5 +1,4 @@
 import WuZiQi
-import numpy as np
 import MonteCarloTreeSearch
 import Network
 import copy,os,time
