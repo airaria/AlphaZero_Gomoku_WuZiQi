@@ -168,7 +168,7 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
         return_probs=True,temperature=TEMPERATURE,noise=True)
 
     for i in range(num_self_play):
-        print ("Start %d-th self-play" % i+1)
+        print ("Start %d-th self-play" % (i+1))
         #load neweset net state
         if not training_model is None:
             '''
@@ -183,8 +183,6 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
         #self play and add data to queue
         states_a,probs_a,wins_a = self_play(game,AIplayer)
         queue.put([states_a,probs_a,wins_a])
-
-        print ("{}-th play generated")
 
         if (i+1) % SELY_PLAY_PER_TRAIN == 0:
             print ("waiting for passing barrier".format(i+1))

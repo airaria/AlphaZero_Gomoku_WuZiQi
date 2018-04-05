@@ -95,6 +95,6 @@ class Env(object):
             sym_board.append(" {} ┃ ".format(i) + ' | '.join([sym_dict[j] for j in row])+' |')
         sym_board = '\n'.join(sym_board)
         return \
-        (" {} ┃ ".format(sym_dict[self.cur_player]) + ' | '.join([str(i) for i in range(7)])+' |'+'\n')\
+        (" {} ┃ ".format(sym_dict[self.cur_player]) + ' | '.join([str(i) for i in range(self.width)])+' |'+'\n')\
         +'\n'\
         +sym_board
