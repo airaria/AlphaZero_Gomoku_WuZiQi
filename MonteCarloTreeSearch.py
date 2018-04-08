@@ -70,7 +70,7 @@ class TreeNode(object):
             self.parent.revert_virtual_loss()
 
 class MCTS(object):
-    def __init__(self, value_fn, c_puct=5, n_search=10000):
+    def __init__(self, value_fn, c_puct=2, n_search=1000):
         self.root = TreeNode(None,1.)
         self.value_fn = value_fn
         self.c_puct = c_puct
@@ -188,8 +188,8 @@ class MCTSPlayer(object):
         self.move_count += 1
         if self.noise:
             if self.move_count > self.dir_start:
-                dirichlet_noise = np.random.dirichlet(0.1 * np.ones(len(self.probs)))
-                move_to_take_i = np.random.choice(len(self.probs),p=(1-0.25)*self.probs + 0.25*dirichlet_noise)
+                dirichlet_noise = np.random.dirichlet(0.075 * np.ones(len(self.probs)))
+                move_to_take_i = np.random.choice(len(self.probs),p=(1-0.2)*self.probs + 0.2*dirichlet_noise)
             else:
                 move_to_take_i = np.random.choice(len(self.probs),p=self.probs)
         else:

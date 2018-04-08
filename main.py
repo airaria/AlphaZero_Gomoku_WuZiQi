@@ -1,3 +1,5 @@
+import os
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import WuZiQi
 import MonteCarloTreeSearch
 import Network
@@ -29,7 +31,7 @@ def self_play(game,AIplayer):
         move_to_take = AIplayer.take_action()
         #print (move_to_take)
 
-        states_list.append(game.build_features(rot_and_flip=0))
+        states_list.append(game.build_features(rot_and_flip=False))
         probs_list.append(probs)
         current_player_list.append(game.cur_player)
 
@@ -175,8 +177,8 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
             with lock:
                 state_dict = training_model.state_dict()
                 AIplayer.controller.model.load_state_dict(state_dict)
+            Sequential self-play and training , don't need lock
             '''
-            # Sequential self-play and training , don't need lock
             state_dict = training_model.state_dict()
             AIplayer.controller.model.load_state_dict(state_dict)
 
@@ -208,6 +210,10 @@ if __name__=='__main__':
         ctx = mp.get_context('forkserver')
         buffer = Buffer(BUFFER_SIZE)
         training_controller = Network.Controller(net,lr = LEARNING_RATE)
+
+        if not LOAD_FN is None:
+            training_controller.load_file(LOAD_FN)
+
         training_controller.model.share_memory()
 
         m = mp.Manager()
@@ -233,7 +239,8 @@ if __name__=='__main__':
 
     if MODE == 'TEST':
         test_controller = Network.Controller(net,lr = LEARNING_RATE)
-        #test_controller.load_file(LOAD_FN)
+        if not LOAD_FN is None:
+            test_controller.load_file(LOAD_FN)
         AIplayer = MonteCarloTreeSearch.MCTSPlayer(
             test_controller, C_PUCT, N_SEARCH,
             return_probs=True, temperature=TEMPERATURE, noise=False)
