@@ -77,7 +77,7 @@ class MCTS(object):
         self.n_search = n_search
 
     def search_many(self,origin_game,many=N_EVALUATE):
-        assert self.root.is_done == False
+        #assert self.root.is_done == False
         nodes = []
         games = []
         for _ in range(many):
@@ -103,7 +103,7 @@ class MCTS(object):
             # 若node是黑棋落完子后的局面，那么leaf_value是以白棋的视角衡量的胜率
             action_probs, leaf_values = self.value_fn(games,many=True)
             for node,action_prob,leaf_value in zip(nodes,action_probs,leaf_values):
-                assert not node.is_done
+                #assert not node.is_done
                 node.revert_virtual_loss()
                 node.expand_and_backup(action_priors=action_prob,value=-leaf_value)
                 #node.expand(action_priors=action_prob)
@@ -177,7 +177,7 @@ class MCTSPlayer(object):
                 self.mcts.update_with_move(opposite_move)
 
     def think(self):
-        assert self.game.n_legal_moves > 0
+        #assert self.game.n_legal_moves > 0
         self.acts, self.probs = self.mcts.get_move_probs(self.game, temperature=self.temperature)
         if self.return_probs:
             arr_probs = np.zeros(self.game.height * self.game.width)
@@ -188,7 +188,7 @@ class MCTSPlayer(object):
         self.move_count += 1
         if self.noise:
             if self.move_count > self.dir_start:
-                dirichlet_noise = np.random.dirichlet(0.075 * np.ones(len(self.probs)))
+                dirichlet_noise = np.random.dirichlet(0.1 * np.ones(len(self.probs)))
                 move_to_take_i = np.random.choice(len(self.probs),p=(1-0.2)*self.probs + 0.2*dirichlet_noise)
             else:
                 move_to_take_i = np.random.choice(len(self.probs),p=self.probs)

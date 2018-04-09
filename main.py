@@ -1,5 +1,6 @@
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 import WuZiQi
 import MonteCarloTreeSearch
 import Network
@@ -148,6 +149,7 @@ def train_epoch(controller, buffer, queue, lock, barrier, done_event, save_dir):
             count += 1
 
         if count%SAVE_EVERY_N_EPOCH==0:
+            print ("saving %d"% count)
             training_controller.save2file(
                 os.path.join(save_dir,"model_{:05d}.pkl".format(count)),MAX_TO_KEEP)
 
@@ -177,8 +179,8 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
             with lock:
                 state_dict = training_model.state_dict()
                 AIplayer.controller.model.load_state_dict(state_dict)
-            Sequential self-play and training , don't need lock
             '''
+            # Sequential self-play and training , don't need lock
             state_dict = training_model.state_dict()
             AIplayer.controller.model.load_state_dict(state_dict)
 

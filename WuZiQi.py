@@ -76,7 +76,7 @@ class Env(object):
         features[1] = self.board == -self.cur_player
         if not self.last_action is None:
             lst_player, row, col = self.last_action
-            assert lst_player == -self.cur_player
+            #assert lst_player == -self.cur_player
             features[2][row,col] = 1
         features[3,:] = (self.cur_player + 1) / 2
 

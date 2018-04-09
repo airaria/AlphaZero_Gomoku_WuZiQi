@@ -183,16 +183,15 @@ class Controller():
     def save2file(self,fn,max_to_keep):
         dir = os.path.dirname(fn)
         model_files = sorted(glob.glob(os.path.join(dir,"*.pkl")))
-        print ("models found",model_files)
+        print ("models found:",model_files)
         print ("To save:",fn)
-
         if len(model_files) > max_to_keep:
             os.remove(model_files[0])
         torch.save(self.model.state_dict(), fn)
 
     def load_file(self,fn):
         self.model.load_state_dict(torch.load(fn))
-        print ("model {} loaded".format(fn))
+        print ('model {} loaded'.format(fn))
 
 
 if __name__ == '__main__':
