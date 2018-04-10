@@ -24,6 +24,8 @@
   - 等于 "TEST" 时，如果LOAD_FN不是None，那么加载模型文件并进入人机对战模式；否则随机初始化模型并对战。
 - MAX_TO_KEEP：最多保存多少个模型文件。
 
+请根据实际的计算资源调整配置。
+
 ## 编译动态库
 
 gcc -shared -fPIC  arb.c -o libarb.so
@@ -42,4 +44,11 @@ x,y
 
 ## 已知问题
 
-1. 尚未实现自我对弈的模型评测
+1. 尚未实现自我对弈的模型评测。
+2. 输入格式错误时直接退出。
+
+## Acknowledgements
+
+minigo: https://github.com/tensorflow/minigo
+
+AlphaZero_Gomoku : https://github.com/junxiaosong/AlphaZero_Gomoku
