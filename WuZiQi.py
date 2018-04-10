@@ -80,11 +80,17 @@ class Env(object):
             features[2][row,col] = 1
         features[3,:] = (self.cur_player + 1) / 2
 
+
+
         if rot_and_flip:  #random rotation | flipping
-            features = np.rot90(features,np.random.randint(4),axes=(1,2))
-            if np.random.random()>0.5:
+            rot_angle = np.random.randint(4)
+            flip_flag = np.random.random()
+            features = np.rot90(features,rot_angle,axes=(1,2))
+            if flip_flag>0.5:
                 features = np.flip(features,axis=-1)
-        return features.copy()
+            return features.copy(),(rot_angle,flip_flag)
+        else:
+            return features
 
     def __repr__(self):
         black = '●'

@@ -157,12 +157,23 @@ class Controller():
             features_list = []
             ap_list = []
             value_list = []
+            rot_list = []
             for game in games:
-                features_list.append(game.build_features(rot_and_flip=True).reshape(4, game.height, game.width))
+                features,rots = game.build_features(rot_and_flip=True)
+                features_list.append(features.reshape(4, game.height, game.width))
+                rot_list.append(rots)
+
             features = np.array(features_list)
             policy, value = self.predict(features)
+
             for k in range(len(games)):
-                probs = policy[k][games[k].legal_positions.reshape(-1)]
+
+                probs_matrix = policy[k].reshape(game.height,game.width)
+                if rot_list[k][1] > 0.5:
+                    probs_matrix = np.flip(probs_matrix, axis=-1)
+                probs_matrix=np.rot90(probs_matrix,-rot_list[k][0])
+                probs = probs_matrix.reshape(-1)[games[k].legal_positions.reshape(-1)]
+
                 lp = games[k].POS_COORD[games[k].legal_positions.reshape(-1)]
                 cur_player = games[k].cur_player
                 ap_list.append([((cur_player, lp[i][0], lp[i][1]), probs[i]) for i in range(len(lp))])
@@ -190,7 +201,10 @@ class Controller():
         torch.save(self.model.state_dict(), fn)
 
     def load_file(self,fn):
-        self.model.load_state_dict(torch.load(fn))
+        if self.use_cuda is False:
+            self.model.load_state_dict(torch.load(fn,map_location=lambda storage, loc: storage))
+        else:
+            self.model.load_state_dict(torch.load(fn))
         print ('model {} loaded'.format(fn))
 
 
