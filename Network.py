@@ -57,19 +57,25 @@ class PoliycValueNet(nn.Module):
         self.res3 = BasicBlock(64,128,stride=1,downsample=downsample3)
         self.res4 = BasicBlock(128,128)
 
-        self.policy_head = nn.Sequential(
-            nn.Conv2d(128,4,kernel_size=1,stride=1,bias=False),
-            nn.BatchNorm2d(4),
-            nn.ReLU(inplace=True)
-        )
-        self.policy_fc = nn.Linear(4*self.width*self.height, self.width*self.height)
 
-        self.value_head = nn.Sequential(
-            nn.Conv2d(128,2,kernel_size=1,stride=1, bias=False),
+        self.policy_head = nn.Sequential(
+            nn.Conv2d(128,2,kernel_size=1,stride=1,bias=False),
             nn.BatchNorm2d(2),
             nn.ReLU(inplace=True)
         )
-        self.value_fc = nn.Linear(2*self.width*self.height,1)
+        self.policy_fc = nn.Linear(2*self.width*self.height, self.width*self.height)
+
+        self.value_head = nn.Sequential(
+            nn.Conv2d(128,1,kernel_size=1,stride=1, bias=False),
+            nn.BatchNorm2d(1),
+            nn.ReLU(inplace=True)
+        )
+        self.value_fc = nn.Sequential(
+            nn.Linear(1*self.width*self.height,100),
+            nn.ReLU(inplace=True),
+            nn.Linear(100,1),
+            nn.Tanh()
+        )
 
     def forward(self,x):
         x = self.init_block(x)
@@ -79,12 +85,12 @@ class PoliycValueNet(nn.Module):
         x = self.res4(x)
 
         policy = self.policy_head(x)
-        policy = policy.view(-1,4*self.height*self.width)
+        policy = policy.view(-1,2*self.height*self.width)
         policy = self.policy_fc(policy)
 
         value = self.value_head(x)
-        value = value.view(-1,2*self.height*self.width)
-        value = F.tanh(self.value_fc(value))
+        value = value.view(-1,self.height*self.width)
+        value = self.value_fc(value)
 
         return policy,value
 

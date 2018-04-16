@@ -4,7 +4,7 @@ import numpy.ctypeslib as npct
 from config import BOARD_SIZE
 
 BLACK = 1
-WHITE = 1
+WHITE = -1
 
 lib = npct.load_library("libarb.so","./")
 check = lib.check

@@ -17,7 +17,6 @@ def self_play(game,AIplayer):
     states_list, probs_list, current_player_list = [], [], []
     is_done = False
     reward = 0
-    #print ("Starting self-play")
     while True:
         if is_done:
             break
@@ -64,12 +63,19 @@ def human_play(game,AIplayer,BW):
         elif game.cur_player == -BW:
             AIplayer.observe(game,last_human_action)
             probs=AIplayer.think() #TODO
+            _, before_value = AIplayer.mcts.value_fn(game)
             move_to_take = AIplayer.take_action()
-            _, value = AIplayer.mcts.value_fn(game)
+
             print(move_to_take)
             print ("Move probablity:",probs.max())
-            print ("Win probability:",value)
+            print ("Current player {}\nWin probability(before):{}".format(
+                game.cur_player,(before_value+1)/2))
+
             board, reward, is_done = game.step(move_to_take)
+
+            _, after_value = AIplayer.mcts.value_fn(game)
+            print("Current player {}\nWin probability(after):{}".format(
+                game.cur_player,(after_value+1)/2))
 
     print (game)
     if reward == -1:
@@ -94,16 +100,36 @@ def self_eval(game,p1,p2):
             probs = p1.think()
             move_to_take = p1.take_action()
             last_oppsite_action = move_to_take
+            _, before_value = p1.mcts.value_fn(game)
+
+            print(move_to_take)
+            print ("Current player {}\nWin probability(before):{}".format(
+                game.cur_player,(before_value+1)/2))
+
             board, reward, is_done = game.step(move_to_take)
+
             print (game)
+            _, after_value = p1.mcts.value_fn(game)
+            print("Current player {}\nWin probability(after):{}".format(
+                game.cur_player,(after_value+1)/2))
+
         else:
             print ("white thinking")
             p2.observe(game,last_oppsite_action)
             probs = p2.think()
             move_to_take = p2.take_action()
             last_oppsite_action = move_to_take
+            _, before_value = p2.mcts.value_fn(game)
+
+            print ("Current player {}\nWin probability(before):{}".format(
+                game.cur_player,(before_value+1)/2))
+
             board, reward, is_done = game.step(move_to_take)
+
             print (game)
+            _, after_value = p2.mcts.value_fn(game)
+            print("Current player {}\nWin probability(after):{}".format(
+                game.cur_player,(after_value+1)/2))
 
     if reward == -1:
         winner = "white"
@@ -282,7 +308,7 @@ if __name__=='__main__':
         AIplayer = MonteCarloTreeSearch.MCTSPlayer(
             test_controller, C_PUCT, N_SEARCH,
             return_probs=True, temperature=TEMPERATURE, noise=False)
-        human_play(game, AIplayer, BLACK)
+        human_play(game, AIplayer, WHITE)
 
     if MODE == 'EVAL':
         net = Network.PoliycValueNet(BOARD_SIZE[0], BOARD_SIZE[1], 4)
