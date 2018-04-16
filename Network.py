@@ -90,7 +90,7 @@ class PoliycValueNet(nn.Module):
 
 
 class Controller():
-    def __init__(self, model, lr,L2_weight=0,optim=None):
+    def __init__(self, model, lr,L2_weight,optim=None):
         self.model = model
         self.lr = lr
         self.L2 = L2_weight
