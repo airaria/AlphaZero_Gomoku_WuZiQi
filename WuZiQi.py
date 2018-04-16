@@ -80,8 +80,6 @@ class Env(object):
             features[2][row,col] = 1
         features[3,:] = (self.cur_player + 1) / 2
 
-
-
         if rot_and_flip:  #random rotation | flipping
             rot_angle = np.random.randint(4)
             flip_flag = np.random.random()
@@ -98,9 +96,9 @@ class Env(object):
         sym_dict = {1:black,0:' ',-1:white}
         sym_board = []
         for i,row in enumerate(self.board):
-            sym_board.append(" {} ┃ ".format(i) + ' | '.join([sym_dict[j] for j in row])+' |')
+            sym_board.append(" {:02d} ┃ ".format(i) + ' | '.join([sym_dict[j] for j in row])+' |')
         sym_board = '\n'.join(sym_board)
         return \
-        (" {} ┃ ".format(sym_dict[self.cur_player]) + ' | '.join([str(i) for i in range(self.height)])+' |'+'\n')\
+        (" {}  ┃ ".format(sym_dict[self.cur_player]) + '| '.join(["{:02d}".format(i) for i in range(self.height)])+'|'+'\n')\
         +'\n'\
         +sym_board

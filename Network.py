@@ -182,7 +182,7 @@ class Controller():
 
         else:
             game = games
-            features = game.build_features(rot_and_flip=True).reshape(-1,4,game.height,game.width)
+            features = game.build_features(rot_and_flip=False).reshape(-1,4,game.height,game.width)
             policy, value = self.predict(features)
 
             probs = policy[0][game.legal_positions.reshape(-1)]
