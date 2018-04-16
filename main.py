@@ -23,12 +23,10 @@ def self_play(game,AIplayer):
             break
 
         #print(game)
-
         AIplayer.observe(game)
         probs = AIplayer.think()
 
         #print(probs.max(), probs.argmax() // BOARD_SIZE[0], probs.argmax() % BOARD_SIZE[1])
-
         move_to_take = AIplayer.take_action()
         #print (move_to_take)
 
@@ -37,7 +35,6 @@ def self_play(game,AIplayer):
         current_player_list.append(game.cur_player)
 
         _, reward, is_done = game.step(move_to_take)
-        #print ('is_done',is_done)
     #print ("done")
     #print(game)
     win_list = [cp*reward for cp in current_player_list]
@@ -68,7 +65,10 @@ def human_play(game,AIplayer,BW):
             AIplayer.observe(game,last_human_action)
             probs=AIplayer.think() #TODO
             move_to_take = AIplayer.take_action()
-            print(move_to_take,probs.max())
+            _, value = AIplayer.mcts.value_fn(game)
+            print(move_to_take)
+            print ("Move probablity:",probs.max())
+            print ("Win probability:",value)
             board, reward, is_done = game.step(move_to_take)
 
     print (game)
@@ -80,7 +80,41 @@ def human_play(game,AIplayer,BW):
         winner = "tie"
     print ("Winner is {}".format(winner))
 
+def self_eval(game,p1,p2):
+    game = copy.deepcopy(game)
+    game.reset()
+    p1.reset()
+    p2.reset()
+    is_done = False
+    last_oppsite_action = None
+    while not is_done:
+        if game.cur_player == BLACK:
+            print ("black thinking")
+            p1.observe(game,last_oppsite_action)
+            probs = p1.think()
+            move_to_take = p1.take_action()
+            last_oppsite_action = move_to_take
+            board, reward, is_done = game.step(move_to_take)
+            print (game)
+        else:
+            print ("white thinking")
+            p2.observe(game,last_oppsite_action)
+            probs = p2.think()
+            move_to_take = p2.take_action()
+            last_oppsite_action = move_to_take
+            board, reward, is_done = game.step(move_to_take)
+            print (game)
 
+    if reward == -1:
+        winner = "white"
+    elif reward == 1:
+        winner = "black"
+    else:
+        winner = "tie"
+    print ("Winner is {}".format(winner))
+
+
+'''
 def train(controller, buffer, queue, lock):
     step = 0
     while step < MAX_TRAIN_STEP:
@@ -101,7 +135,7 @@ def train(controller, buffer, queue, lock):
         with lock:
             loss = controller.train_on_batch(sample_states, sample_wins, sample_probs)
         print(loss)
-
+'''
 
 def train_epoch(controller, buffer, queue, lock, barrier, done_event, save_dir):
 
@@ -164,7 +198,7 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
                            training_model=None):
 
     net = Network.PoliycValueNet(BOARD_SIZE[0], BOARD_SIZE[1], 4)
-    playing_controller = Network.Controller(net, lr=LEARNING_RATE)
+    playing_controller = Network.Controller(net, lr=LEARNING_RATE,L2_weight=L2_WEIGHT)
 
 
     AIplayer = MonteCarloTreeSearch.MCTSPlayer(
@@ -206,12 +240,13 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
 if __name__=='__main__':
 
     game = WuZiQi.Env(BOARD_SIZE)
-    net = Network.PoliycValueNet(BOARD_SIZE[0], BOARD_SIZE[1], 4)
+
 
     if MODE == 'TRAIN':
         ctx = mp.get_context('forkserver')
         buffer = Buffer(BUFFER_SIZE)
-        training_controller = Network.Controller(net,lr = LEARNING_RATE)
+        net = Network.PoliycValueNet(BOARD_SIZE[0], BOARD_SIZE[1], 4)
+        training_controller = Network.Controller(net,lr = LEARNING_RATE,L2_weight=L2_WEIGHT)
 
         if not LOAD_FN is None:
             training_controller.load_file(LOAD_FN)
@@ -240,10 +275,29 @@ if __name__=='__main__':
 
 
     if MODE == 'TEST':
-        test_controller = Network.Controller(net,lr = LEARNING_RATE)
+        net = Network.PoliycValueNet(BOARD_SIZE[0], BOARD_SIZE[1], 4)
+        test_controller = Network.Controller(net,lr = LEARNING_RATE,L2_weight=L2_WEIGHT)
         if not LOAD_FN is None:
             test_controller.load_file(LOAD_FN)
         AIplayer = MonteCarloTreeSearch.MCTSPlayer(
             test_controller, C_PUCT, N_SEARCH,
             return_probs=True, temperature=TEMPERATURE, noise=False)
         human_play(game, AIplayer, BLACK)
+
+    if MODE == 'EVAL':
+        net = Network.PoliycValueNet(BOARD_SIZE[0], BOARD_SIZE[1], 4)
+        P1_controller = Network.Controller(net,lr = LEARNING_RATE,L2_weight=L2_WEIGHT)
+        net = Network.PoliycValueNet(BOARD_SIZE[0], BOARD_SIZE[1], 4)
+        P2_controller = Network.Controller(net,lr = LEARNING_RATE,L2_weight=L2_WEIGHT)
+
+        P1_controller.load_file(P1)
+        p1 = MonteCarloTreeSearch.MCTSPlayer(
+            P1_controller,C_PUCT,N_SEARCH,
+            return_probs=True, temperature=TEMPERATURE,noise=False)
+
+        P2_controller.load_file(P2)
+        p2 = MonteCarloTreeSearch.MCTSPlayer(
+            P2_controller,C_PUCT,N_SEARCH,
+            return_probs=True, temperature=TEMPERATURE,noise=False)
+
+        self_eval(game,p1,p2)
