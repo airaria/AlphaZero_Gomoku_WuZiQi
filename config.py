@@ -7,9 +7,9 @@ TEMPERATURE = 1.0
 
 BATCH_SIZE = 64
 MAX_SELF_PLAY = 5000
-LEARNING_RATE = 0.00025
-N_VIRTUAL_LOSS = 5
-N_EVALUATE = 3
+LEARNING_RATE = 0.0005
+N_VIRTUAL_LOSS = 0#5
+N_EVALUATE = 1#3
 N_WORKER = 6#4
 
 BUFFER_SIZE = 25000
@@ -20,5 +20,10 @@ START_TRAIN_BUFFER_SIZE = 7000
 
 SAVE_DIR = 'saved_model_bs11_2nd_exp/'
 LOAD_FN =  'saved_model_bs11_2nd_exp/model_00550.pkl'
-MODE = "TEST" # 'TRAIN' or "TEST"
+MODE = "TEST" # 'TRAIN' or "TEST" or "EVAL"
 MAX_TO_KEEP = 20
+
+L2_WEIGHT = 1e-4
+
+P1 = 'saved_model_bs11_2nd_exp/model_00550.pkl'
+P2 = 'saved_models/saved_model_1st_500'
