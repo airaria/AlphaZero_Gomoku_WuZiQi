@@ -173,7 +173,7 @@ class Controller():
             policy, value = self.predict(features)
 
             for k in range(len(games)):
-
+                #rotate back
                 probs_matrix = policy[k].reshape(game.height,game.width)
                 if rot_list[k][1] > 0.5:
                     probs_matrix = np.flip(probs_matrix, axis=-1)

@@ -20,6 +20,7 @@ class Env(object):
         assert self.size == BOARD_SIZE
         self.width = size[1]
         self.height = size[0]
+        self.N = self.width * self.height
         self.board = np.zeros(size,dtype=np.int32)
         self.legal_positions = np.ones(size,dtype=np.bool)
         self.n_legal_moves = self.width * self.height
