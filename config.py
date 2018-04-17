@@ -19,8 +19,8 @@ SAVE_EVERY_N_EPOCH = 5
 START_TRAIN_BUFFER_SIZE = 7000
 
 SAVE_DIR = 'saved_model_bs11_2nd_exp/'
-LOAD_FN =  'saved_model_bs11_2nd_exp/model_00550.pkl'
-MODE = "TEST" # 'TRAIN' or "TEST" or "EVAL"
+LOAD_FN =  None #'saved_model_bs11_2nd_exp/model_00550.pkl'
+MODE = "TRAIN" # 'TRAIN' or "TEST" or "EVAL"
 MAX_TO_KEEP = 20
 
 L2_WEIGHT = 1e-4
