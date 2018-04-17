@@ -15,6 +15,8 @@ class TreeNode(object):
         self.is_done = False
         self.children = {}  # {action: child, action: child ....}
         self.is_expanded = False
+        self.is_injected = False
+
 
     def QU(self,c_puct):
         U = c_puct*self.prior_p*np.sqrt(self.parent.N)/(1+self.N)
@@ -80,6 +82,7 @@ class MCTS(object):
         #assert self.root.is_done == False
         nodes = []
         games = []
+
         for _ in range(many):
             action = None
             game = copy.deepcopy(origin_game)
@@ -110,38 +113,61 @@ class MCTS(object):
                 #if not node.is_expanded:
                 #    node.backup(-leaf_value)
 
-    def search(self,origin_game):
-        game = copy.deepcopy(origin_game)
-        assert self.root.is_done == False
-        node = self.root
-        action = None
-        while len(node.children)>0:
-            action,node = node.select(self.c_puct)
-            game.fast_step(action)
-        # 若当node是黑棋落完子后的局面，那么leaf_value是以白棋的视角衡量的胜率
-        action_probs, leaf_value = self.value_fn(game)
+    def search_many_with_noise(self,origin_game,many=N_EVALUATE):
+        #assert self.root.is_done == False
+        nodes = []
+        games = []
 
-        if not action is None:
-            node.is_done,reward = game.check(action)
-        if node.is_done:
-                leaf_value = -1 #reward
-        else:
-            node.expand(action_priors=action_probs)
+        #TODO inject noise
+        if (not self.root.is_injected) and len(self.root.children)!=0:
+            dirichlet_noise = np.random.dirichlet(0.1 * np.ones(origin_game.N))
+            for child_i, child in enumerate(self.root.children.values()):
+                child.prior_p = child.prior_p * 0.75 + dirichlet_noise[child_i] * 0.25
+            self.root.is_injected = True
 
-        # Update value and visit count of nodes in this traversal.
-        node.backup(-leaf_value)
+        for _ in range(many):
+            action = None
+            game = copy.deepcopy(origin_game)
+
+            node = self.root
+            while len(node.children)>0:
+                action,node = node.select(self.c_puct)
+                game.fast_step(action)
+
+            if not action is None:
+                node.is_done, reward = game.check(action)
+            if node.is_done:
+                leaf_value = -1  # reward
+                node.backup(-leaf_value)
+            else:
+                node.add_virtual_loss()
+                games.append(game)
+                nodes.append(node)
+
+        if len(games)>0:
+            # 若node是黑棋落完子后的局面，那么leaf_value是以白棋的视角衡量的胜率
+            action_probs, leaf_values = self.value_fn(games,many=True)
+            for node,action_prob,leaf_value in zip(nodes,action_probs,leaf_values):
+                #assert not node.is_done
+                node.revert_virtual_loss()
+                node.expand_and_backup(action_priors=action_prob,value=-leaf_value)
+                #node.expand(action_priors=action_prob)
+                #if not node.is_expanded:
+                #    node.backup(-leaf_value)
 
     def update_with_move(self, last_move):
-        #if last_move in self.root.children:
         self.root = self.root.children[last_move]
         self.root.parent = None
         #else:
         #    self.root = TreeNode(None, 1.0)
 
-    def get_move_probs(self, game, temperature):
-
-        for n in range(self.n_search):
-            self.search_many(game)
+    def get_move_probs(self, game, temperature,dir_noise):
+        if dir_noise:
+            for n in range(self.n_search):
+                self.search_many_with_noise(game)
+        else:
+            for n in range(self.n_search):
+                self.search_many(game)
 
         act_n = [(act, node.N) for act, node in self.root.children.items()]
         acts, visits = zip(*act_n)
@@ -151,18 +177,19 @@ class MCTS(object):
 
 
 class MCTSPlayer(object):
-    def __init__(self,controller,c_puct,n_search,return_probs,temperature,noise=True):
+    def __init__(self,controller,c_puct,n_search,return_probs,temperature,noise=True,dir_noise=True):
         self.controller = controller
         self.mcts = MCTS(controller.value_fn,c_puct,n_search)
         self.return_probs = return_probs
         self.temperature = temperature
         self.noise = noise
+        self.dir_noise = dir_noise
         self.game = None
         self.acts = None
         self.probs = None
 
         self.move_count = 0
-        self.dir_start = 20
+        self.det_start = 20
 
     def reset(self):
         self.move_count = 0
@@ -178,7 +205,10 @@ class MCTSPlayer(object):
 
     def think(self):
         #assert self.game.n_legal_moves > 0
-        self.acts, self.probs = self.mcts.get_move_probs(self.game, temperature=self.temperature)
+        #inject noise
+        #TODO
+
+        self.acts, self.probs = self.mcts.get_move_probs(self.game, temperature=self.temperature,dir_noise=self.dir_noise)
         if self.return_probs:
             arr_probs = np.zeros(self.game.height * self.game.width)
             arr_probs[[a[1] * self.game.width + a[2] for a in self.acts]] = self.probs
@@ -186,11 +216,7 @@ class MCTSPlayer(object):
 
     def take_action(self):
         self.move_count += 1
-        if self.noise:
-            if self.move_count > self.dir_start:
-                dirichlet_noise = np.random.dirichlet(0.1 * np.ones(len(self.probs)))
-                move_to_take_i = np.random.choice(len(self.probs),p=(1-0.25)*self.probs + 0.25*dirichlet_noise)
-            else:
+        if self.move_count <= self.det_start and self.noise:
                 move_to_take_i = np.random.choice(len(self.probs),p=self.probs)
         else:
             move_to_take_i = np.argmax(self.probs)

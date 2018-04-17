@@ -42,7 +42,6 @@ def self_play(game,AIplayer):
     #add to buffer
     return states_a, probs_a, wins_a
 
-
 def human_play(game,AIplayer,BW):
     game = copy.deepcopy(game)
     game.reset()
@@ -229,7 +228,7 @@ def collect_self_play_data(game,queue,lock,barrier,done_event,
 
     AIplayer = MonteCarloTreeSearch.MCTSPlayer(
         playing_controller,C_PUCT,N_SEARCH,
-        return_probs=True,temperature=TEMPERATURE,noise=True)
+        return_probs=True,temperature=TEMPERATURE,noise=True,dir_noise=True)
 
     for i in range(num_self_play):
         print ("Start %d-th self-play" % (i+1))
@@ -307,7 +306,7 @@ if __name__=='__main__':
             test_controller.load_file(LOAD_FN)
         AIplayer = MonteCarloTreeSearch.MCTSPlayer(
             test_controller, C_PUCT, N_SEARCH,
-            return_probs=True, temperature=TEMPERATURE, noise=False)
+            return_probs=True, temperature=TEMPERATURE, noise=False,dir_noise=False)
         human_play(game, AIplayer, WHITE)
 
     if MODE == 'EVAL':
@@ -319,11 +318,11 @@ if __name__=='__main__':
         P1_controller.load_file(P1)
         p1 = MonteCarloTreeSearch.MCTSPlayer(
             P1_controller,C_PUCT,N_SEARCH,
-            return_probs=True, temperature=TEMPERATURE,noise=False)
+            return_probs=True, temperature=TEMPERATURE,noise=False,dir_noise=True)
 
         P2_controller.load_file(P2)
         p2 = MonteCarloTreeSearch.MCTSPlayer(
             P2_controller,C_PUCT,N_SEARCH,
-            return_probs=True, temperature=TEMPERATURE,noise=False)
+            return_probs=True, temperature=TEMPERATURE,noise=False,dir_noise=True)
 
         self_eval(game,p1,p2)
