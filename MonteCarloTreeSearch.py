@@ -17,6 +17,8 @@ class TreeNode(object):
         self.is_expanded = False
         self.is_injected = False
 
+        self.leaf_value = None
+
 
     def QU(self,c_puct):
         U = c_puct*self.prior_p*np.sqrt(self.parent.N)/(1+self.N)
@@ -95,8 +97,10 @@ class MCTS(object):
             if not action is None:
                 node.is_done, reward = game.check(action)
             if node.is_done:
-                leaf_value = -1  # reward
-                node.backup(-leaf_value)
+                #leaf_value = -1  # reward
+                neg_leaf_value = reward * reward
+                node.leaf_value = neg_leaf_value
+                node.backup(neg_leaf_value)
             else:
                 node.add_virtual_loss()
                 games.append(game)
@@ -108,6 +112,7 @@ class MCTS(object):
             for node,action_prob,leaf_value in zip(nodes,action_probs,leaf_values):
                 #assert not node.is_done
                 node.revert_virtual_loss()
+                node.leaf_value = leaf_value
                 node.expand_and_backup(action_priors=action_prob,value=-leaf_value)
                 #node.expand(action_priors=action_prob)
                 #if not node.is_expanded:
@@ -137,8 +142,10 @@ class MCTS(object):
             if not action is None:
                 node.is_done, reward = game.check(action)
             if node.is_done:
-                leaf_value = -1  # reward
-                node.backup(-leaf_value)
+                #leaf_value = -1  # reward
+                neg_leaf_value = reward * reward
+                node.leaf_value = neg_leaf_value
+                node.backup(neg_leaf_value)
             else:
                 node.add_virtual_loss()
                 games.append(game)

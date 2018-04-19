@@ -62,19 +62,21 @@ def human_play(game,AIplayer,BW):
         elif game.cur_player == -BW:
             AIplayer.observe(game,last_human_action)
             probs=AIplayer.think() #TODO
-            _, before_value = AIplayer.mcts.value_fn(game)
+
+            before_value = (AIplayer.mcts.root.leaf_value+1)/2
+
             move_to_take = AIplayer.take_action()
 
             print(move_to_take)
             print ("Move probablity:",probs.max())
             print ("Current player {}\nWin probability(before):{}".format(
-                game.cur_player,(before_value+1)/2))
+                game.cur_player,before_value))
 
             board, reward, is_done = game.step(move_to_take)
 
-            _, after_value = AIplayer.mcts.value_fn(game)
+            after_value = (AIplayer.mcts.root.leaf_value+1)/2
             print("Current player {}\nWin probability(after):{}".format(
-                game.cur_player,(after_value+1)/2))
+                game.cur_player,after_value))
 
     print (game)
     if reward == -1:
@@ -191,7 +193,7 @@ def train_epoch(controller, buffer, queue, lock, barrier, done_event, save_dir):
         else:
             #train loop
             loss = 0
-            NoB = N_EPOCH_PER_TRAIN_STEP*buffer.num_sample//BATCH_SIZE
+            NoB = int(N_EPOCH_PER_TRAIN_STEP*buffer.num_sample//BATCH_SIZE)
             print ("Number of sample: ",buffer.num_sample)
             print ("Number of batches: ",NoB)
             for i_batch in range(NoB):
