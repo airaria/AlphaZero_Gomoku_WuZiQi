@@ -20,8 +20,8 @@ SAVE_EVERY_N_EPOCH = 5
 START_TRAIN_BUFFER_SIZE = 20480
 
 SAVE_DIR = 'saved_model_6th_experiment/'
-LOAD_FN =  None #'saved_model_5th_experiment/model_00050.pkl'
-MODE = "TRAIN" # 'TRAIN' or "TEST" or "EVAL"
+LOAD_FN =  'saved_model_5th_experiment/model_00050.pkl'
+MODE = "TEST" # 'TRAIN' or "TEST" or "EVAL"
 MAX_TO_KEEP = 20
 
 

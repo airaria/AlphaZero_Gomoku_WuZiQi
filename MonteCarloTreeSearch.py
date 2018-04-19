@@ -144,7 +144,7 @@ class MCTS(object):
             if node.is_done:
                 #leaf_value = -1  # reward
                 neg_leaf_value = reward * reward
-                node.leaf_value = neg_leaf_value
+                node.leaf_value = - neg_leaf_value
                 node.backup(neg_leaf_value)
             else:
                 node.add_virtual_loss()
