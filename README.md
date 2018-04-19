@@ -14,7 +14,7 @@
 - N_WORKER：并行self-play的进程数。**每步的探索次数=N_WORKER * N_SEARCH * N_EVALUATE** 。
 - BUFFER_SIZE：储存对弈局面的buffer大小。
 - N_EPOCH_PER_TRAIN_STEP：每次训练时，在已收集的self-play数据上过几个epoch。
-- SELF_PLAY_PER_TRAIN：每次训练前，每个进程self-play的局数
+- SELF_PLAY_PER_TRAIN：每次训练前，每个进程self-play的局数。
 - SAVE_EVERY_N_EPOCH：顾名思义。
 - START_TRAIN_BUFFER_SIZE：buffer中至少收集到这么多数据时才开始训练。
 - SAVE_DIR：模型保存目录
@@ -22,7 +22,7 @@
 - MODE：
   - 等于 "TRAIN" 时：如果LOAD_FN不是None ，那么加载模型文件并训练；否则从头训练。
   - 等于 "TEST" 时，如果LOAD_FN不是None，那么加载模型文件并进入人机对战模式；否则随机初始化模型并对战。
-  - 等于 ”EVAL"时，读入模型文件P1和P2，P1执黑，进行对弈。
+  - 等于 ”EVAL"时，读入模型文件P1和P2，P1执黑先行，进行对弈。
 - MAX_TO_KEEP：最多保存多少个模型文件。
 
 请根据实际的计算资源调整配置。
@@ -52,6 +52,8 @@ x,y
 1. 上传训练完成的模型
 
 ## Acknowledgements
+
+参考了以下实现：
 
 minigo: https://github.com/tensorflow/minigo
 
