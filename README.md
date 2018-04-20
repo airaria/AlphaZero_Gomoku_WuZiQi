@@ -50,6 +50,7 @@ x,y
 
 ## TODO
 1. 上传训练完成的模型
+2. 将模型从PyTorch迁移到Caffe2
 
 ## Acknowledgements
 
