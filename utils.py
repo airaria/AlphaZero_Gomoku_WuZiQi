@@ -67,3 +67,21 @@ class Buffer(object):
 
     def __len__(self):
         return self.num_sample
+
+def get_input(game):
+    while True:
+        input_str = input("action: x,y:\n")
+        try:
+            x,y = input_str.split(',')
+            x = int(x)
+            y = int(y)
+        except:
+            print("Invalid format")
+            continue
+        try:
+            assert game.legal_positions[x,y]==True
+        except AssertionError:
+            print("Invalid position")
+            continue
+        break
+    return x,y

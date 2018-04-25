@@ -6,7 +6,7 @@ import MonteCarloTreeSearch
 import Network
 import copy,os,time
 from config import *
-from utils import data_augment,Buffer
+from utils import data_augment,Buffer,get_input
 import torch.multiprocessing as mp
 from queue import Empty as EmptyError
 
@@ -55,7 +55,7 @@ def human_play(game,AIplayer,BW):
             break
         print (game)
         if game.cur_player == BW:
-            posstr= input("action: x,y\n").split(',')
+            posstr= get_input(game)
             move_to_take = (game.cur_player,int(posstr[0]),int(posstr[1]))
             last_human_action = move_to_take
             board,reward,is_done = game.step(move_to_take)
@@ -126,7 +126,8 @@ def self_eval(game,p1,p2):
             move_to_take = p2.take_action()
             last_oppsite_action = move_to_take
             _, before_value = p2.mcts.value_fn(game)
-
+            
+            print(move_to_take)
             print ("Current player {}\nWin probability(before):{}".format(
                 game.cur_player,(before_value+1)/2))
 
