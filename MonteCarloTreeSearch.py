@@ -99,7 +99,7 @@ class MCTS(object):
             if node.is_done:
                 #leaf_value = -1  # reward
                 neg_leaf_value = reward * reward
-                node.leaf_value = neg_leaf_value
+                #node.leaf_value = -neg_leaf_value
                 node.backup(neg_leaf_value)
             else:
                 node.add_virtual_loss()
@@ -112,7 +112,7 @@ class MCTS(object):
             for node,action_prob,leaf_value in zip(nodes,action_probs,leaf_values):
                 #assert not node.is_done
                 node.revert_virtual_loss()
-                node.leaf_value = leaf_value
+                #node.leaf_value = leaf_value
                 node.expand_and_backup(action_priors=action_prob,value=-leaf_value)
                 #node.expand(action_priors=action_prob)
                 #if not node.is_expanded:
@@ -144,7 +144,7 @@ class MCTS(object):
             if node.is_done:
                 #leaf_value = -1  # reward
                 neg_leaf_value = reward * reward
-                node.leaf_value = - neg_leaf_value
+                #node.leaf_value = - neg_leaf_value
                 node.backup(neg_leaf_value)
             else:
                 node.add_virtual_loss()
@@ -157,6 +157,7 @@ class MCTS(object):
             for node,action_prob,leaf_value in zip(nodes,action_probs,leaf_values):
                 #assert not node.is_done
                 node.revert_virtual_loss()
+                #node.leaf_value = leaf_value
                 node.expand_and_backup(action_priors=action_prob,value=-leaf_value)
                 #node.expand(action_priors=action_prob)
                 #if not node.is_expanded:

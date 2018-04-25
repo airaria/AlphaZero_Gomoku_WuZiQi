@@ -63,7 +63,7 @@ def human_play(game,AIplayer,BW):
             AIplayer.observe(game,last_human_action)
             probs=AIplayer.think() #TODO
 
-            before_leaf = (AIplayer.mcts.root.leaf_value+1)/2
+            #before_leaf = (AIplayer.mcts.root.leaf_value+1)/2
             before_value,before_N = (1-(AIplayer.mcts.root.W/AIplayer.mcts.root.N+1)/2,AIplayer.mcts.root.N)
 
             move_to_take = AIplayer.take_action()
@@ -72,15 +72,15 @@ def human_play(game,AIplayer,BW):
             print ("Move probablity:",probs.max())
             print ("Current player {}\nWin probability(before):{} N:{}".format(
                 game.cur_player,before_value,before_N))
-            print (before_leaf)
+            #print (before_leaf)
 
             board, reward, is_done = game.step(move_to_take)
 
-            after_leaf = (AIplayer.mcts.root.leaf_value+1)/2
+            #after_leaf = (AIplayer.mcts.root.leaf_value+1)/2
             after_value,after_N = (1-(AIplayer.mcts.root.W/AIplayer.mcts.root.N+1)/2,AIplayer.mcts.root.N)
             print("Current player {}\nWin probability(after):{} N:{}".format(
                 game.cur_player,after_value,after_N))
-            print (after_leaf)
+            #print (after_leaf)
 
 
     print (game)
@@ -126,7 +126,7 @@ def self_eval(game,p1,p2):
             move_to_take = p2.take_action()
             last_oppsite_action = move_to_take
             _, before_value = p2.mcts.value_fn(game)
-            
+
             print(move_to_take)
             print ("Current player {}\nWin probability(before):{}".format(
                 game.cur_player,(before_value+1)/2))
