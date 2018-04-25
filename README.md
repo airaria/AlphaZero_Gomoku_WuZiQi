@@ -46,11 +46,12 @@ x,y
 ## 已知问题
 
 1. ~~尚未实现自我对弈的模型评测。~~
-2. 输入格式错误时直接退出。
+2. ~~输入格式错误时直接退出。~~
 
 ## TODO
 1. 上传训练完成的模型
 2. 将模型从PyTorch迁移到Caffe2
+3. Pytorch 0.4 compatibility.
 
 ## Acknowledgements
 
