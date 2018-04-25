@@ -43,6 +43,10 @@ python main.py
 
 x,y
 
+## 模型对战
+
+python main.py
+
 ## 已知问题
 
 1. ~~尚未实现自我对弈的模型评测。~~
@@ -50,7 +54,7 @@ x,y
 
 ## TODO
 1. 上传训练完成的模型
-2. 将模型从PyTorch迁移到Caffe2
+2. 将模型文件从PyTorch迁移到Caffe2
 3. Pytorch 0.4 compatibility.
 
 ## Acknowledgements
