@@ -1,5 +1,10 @@
 # AlphaZero_Gomoku_WuZiQi
 
+## 目前状态
+
+结束第八次实验，训练到了680th generation，总计对弈约两万局，性能出现退化。
+目前最佳模型约出现在第八次实验的400th generation~540th generation范围。
+
 ##  config.py 配置
 
 一些参数说明：
@@ -51,9 +56,10 @@ python main.py
 
 1. ~~尚未实现自我对弈的模型评测。~~
 2. ~~输入格式错误时直接退出。~~
+3. 胜率预测非常不靠谱，或许是网络太小，容量不够?
 
 ## TODO
-1. 上传训练完成的模型
+1. ~~上传训练完成的模型~~
 2. 将模型文件从PyTorch迁移到Caffe2
 3. Pytorch 0.4 compatibility.
 
