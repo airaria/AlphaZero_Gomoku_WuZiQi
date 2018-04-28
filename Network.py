@@ -94,6 +94,76 @@ class PoliycValueNet(nn.Module):
 
         return policy,value
 
+class EvalController():
+    def __init__(self,model):
+        self.model = model
+        self.use_cuda = torch.cuda.is_available()
+        if self.use_cuda:
+            self.model.cuda()
+        self.model.eval()
+    def predict(self,x):
+        x = Variable(torch.from_numpy(x).float())
+        if self.use_cuda:
+            x = x.cuda()
+        policy,value = self.model(x)
+        policy = F.softmax(policy,dim=-1).data.cpu().numpy()
+        value =   value.data.cpu().numpy()
+        return policy,value
+    def value_fn(self,games,many=False):
+        if many:
+            features_list = []
+            ap_list = []
+            value_list = []
+            rot_list = []
+            for game in games:
+                features,rots = game.build_features(rot_and_flip=True)
+                features_list.append(features.reshape(4, game.height, game.width))
+                rot_list.append(rots)
+
+            features = np.array(features_list)
+            policy, value = self.predict(features)
+
+            for k in range(len(games)):
+                #rotate back
+                probs_matrix = policy[k].reshape(game.height,game.width)
+                if rot_list[k][1] > 0.5:
+                    probs_matrix = np.flip(probs_matrix, axis=-1)
+                probs_matrix=np.rot90(probs_matrix,-rot_list[k][0])
+                probs = probs_matrix.reshape(-1)[games[k].legal_positions.reshape(-1)]
+
+                lp = games[k].POS_COORD[games[k].legal_positions.reshape(-1)]
+                cur_player = games[k].cur_player
+                ap_list.append([((cur_player, lp[i][0], lp[i][1]), probs[i]) for i in range(len(lp))])
+                value_list.append(value[k][0])
+            return ap_list, value_list
+
+        else:
+            game = games
+            features = game.build_features(rot_and_flip=False).reshape(-1,4,game.height,game.width)
+            policy, value = self.predict(features)
+
+            probs = policy[0][game.legal_positions.reshape(-1)]
+            lp = game.POS_COORD[game.legal_positions.reshape(-1)]
+
+            return [((game.cur_player,lp[i][0],lp[i][1]),probs[i]) for i in range(len(lp))],\
+                   value[0][0]
+
+    def save2file(self,fn,max_to_keep):
+        dir = os.path.dirname(fn)
+        model_files = sorted(glob.glob(os.path.join(dir,"*.pkl")))
+        print ("models found:",model_files)
+        print ("To save:",fn)
+        if len(model_files) > max_to_keep:
+            os.remove(model_files[0])
+        torch.save(self.model.state_dict(), fn)
+
+    def load_file(self,fn):
+        if self.use_cuda is False:
+            self.model.load_state_dict(torch.load(fn,map_location=lambda storage, loc: storage))
+        else:
+            self.model.load_state_dict(torch.load(fn))
+        print ('model {} loaded'.format(fn))
+
 
 class Controller():
     def __init__(self, model, lr,L2_weight,optim=None):

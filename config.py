@@ -20,8 +20,9 @@ SAVE_EVERY_N_EPOCH = 5
 START_TRAIN_BUFFER_SIZE = 20480
 
 SAVE_DIR = 'saved_model_6th_experiment/'
-LOAD_FN =  'saved_model_5th_experiment/model_00050.pkl'
+LOAD_FN =  'saved_models/model_00400_8th.pkl'
 MODE = "TEST" # 'TRAIN' or "TEST" or "EVAL"
+COLOR = WHITE
 MAX_TO_KEEP = 20
 
 
