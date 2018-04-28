@@ -60,7 +60,7 @@ python main.py
 
 ## TODO
 1. ~~上传训练完成的模型~~
-2. 将模型文件从PyTorch迁移到Caffe2
+2. ~~将模型文件从PyTorch迁移到Caffe2~~
 3. Pytorch 0.4 compatibility.
 
 ## Acknowledgements
